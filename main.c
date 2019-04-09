@@ -12,7 +12,7 @@ static int __init overlord_init(void) {
     return 0;
 }
 
-static void __exit overlord_exit(void){
+static void __exit overlord_exit(void) {
     idt_rollback();
     printk(KERN_INFO "[Overlord]: Goodbye World!\n");
 }
