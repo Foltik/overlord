@@ -11,7 +11,7 @@ struct idt_reg get_idtr(void) {
 }
 
 void *get_isr(struct idt_entry *idte) {
-    return (idte->off_high << 32) | (idte->off_mid << 16) | (idte->off_low);
+    return (void*)(((u64)idte->off_high << 32) | ((u64)idte->off_mid << 16) | ((u64)idte->off_low));
 }
 
 void set_isr(struct idt_entry *idte, void *addr) {
@@ -22,44 +22,35 @@ void set_isr(struct idt_entry *idte, void *addr) {
 
 
 
-struct idt_entry *old_idt;
-struct idt_entry *mod_idt;
+struct idt_entry *original_idt;
 
 void idt_setup(void) {
     struct idt_reg idtr = get_idtr();
     size_t size = idtr.limit * sizeof(struct idt_entry);
 
-    old_idt = kmalloc(size, GFP_KERNEL);
-    mod_idt = kzalloc(size, GFP_KERNEL);
-
-    memcpy(old_idt, idtr.base, size);
+    original_idt = kmalloc(size, GFP_KERNEL);
+    memcpy(original_idt, idtr.base, size);
 }
 
 void idt_rollback(void) {
     struct idt_reg idtr = get_idtr();
     size_t size = idtr.limit * sizeof(struct idt_entry);
 
-    memcpy(idtr.base, old_idt, size);
-
-    kfree(old_idt);
-    kfree(mod_idt);
+    memcpy(idtr.base, original_idt, size);
+    kfree(original_idt);
 }
 
 void hook_idte(struct idt_entry entry, int n) {
     struct idt_reg idtr = get_idtr();
-    mod_idt[n] = entry;
-    memcpy(&idtr.base[n], &mod_idt[n], sizeof(struct idt_entry));
+    idtr.base[n] = entry;
 }
 
-void unhook_idte(struct idt_entry entry, int n) {
+void unhook_idte(int n) {
     struct idt_reg idtr = get_idtr();
-    memcpy(&idtr.base[n], &old_idt[n], sizeof(struct idt_entry));
-    memset(&mod_idt[n], 0, sizeof(struct idt_entry));
+    idtr.base[n] = original_idt[n];
 }
 
 void hook_idte_stub(void *addr, int n) {
     struct idt_reg idtr = get_idtr();
-    memcpy(&mod_idt[n], &old_idt[n], sizeof(struct idt_entry));
-    set_isr(&mod_idt[n], addr);
-    memcpy(&idtr.base[n], &mod_idt[n], sizeof(struct idt_entry));
+    set_isr(&idtr.base[n], addr);
 }

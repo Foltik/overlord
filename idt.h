@@ -24,8 +24,7 @@ void *get_isr(struct idt_entry *idte);
 void set_isr(struct idt_entry *idte, void *addr);
 
 // Hooking
-extern struct idt_entry *old_idt;
-extern struct idt_entry *mod_idt;
+extern struct idt_entry *original_idt;
 void idt_setup(void);
 void idt_rollback(void);
 void hook_idte(struct idt_entry entry, int n);
