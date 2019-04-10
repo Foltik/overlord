@@ -5,13 +5,6 @@
 
 #include "msr.h"
 
-struct idt_reg get_idtr(void) {
-    struct idt_reg idtr;
-    asm("sidt %0"
-        : "=m" (idtr));
-    return idtr;
-}
-
 void *get_isr(struct idt_entry *idte) {
     return (void*)(((u64)idte->off_high << 32) | ((u64)idte->off_mid << 16) | ((u64)idte->off_low));
 }
@@ -25,46 +18,44 @@ void set_isr(struct idt_entry *idte, void *addr) {
 
 
 struct idt_entry *original_idt;
+struct idt_entry *idt;
+size_t idt_length;
+size_t idt_size;
 
 void idt_setup(void) {
-    struct idt_reg idtr = get_idtr();
-    size_t size = idtr.limit * sizeof(struct idt_entry);
+    struct idt_reg idtr;
+    asm("sidt %0"
+        : "=m" (idtr));
 
-    original_idt = kmalloc(size, GFP_KERNEL);
-    memcpy(original_idt, idtr.base, size);
+    idt_length = idtr.limit;
+    idt_size = idt_length * sizeof(struct idt_entry);
+
+    original_idt = kmalloc(idt_size, GFP_KERNEL);
+    memcpy(original_idt, idt, idt_size);
 }
 
 void idt_rollback(void) {
-    struct idt_reg idtr = get_idtr();
-    size_t size = idtr.limit * sizeof(struct idt_entry);
-
     disable_write_protect();
-    memcpy(idtr.base, original_idt, size);
+    memcpy(idt, original_idt, idt_size);
     enable_write_protect();
 
     kfree(original_idt);
 }
 
 void hook_idte(struct idt_entry entry, int n) {
-    struct idt_reg idtr = get_idtr();
-
     disable_write_protect();
-    idtr.base[n] = entry;
+    idt[n] = entry;
     enable_write_protect();
 }
 
 void unhook_idte(int n) {
-    struct idt_reg idtr = get_idtr();
-
     disable_write_protect();
-    idtr.base[n] = original_idt[n];
+    idt[n] = original_idt[n];
     enable_write_protect();
 }
 
 void hook_idte_stub(void *addr, int n) {
-    struct idt_reg idtr = get_idtr();
-
     disable_write_protect();
-    set_isr(&idtr.base[n], addr);
+    set_isr(&idt[n], addr);
     enable_write_protect();
 }
