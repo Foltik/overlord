@@ -28,9 +28,9 @@ void syscall_rollback(void) {
     kfree(original_syscalls);
 }
 
-void hook_syscall(void *addr, int n) {
+void hook_syscall(syscall_t fn, int n) {
     disable_write_protect();
-    syscalls[n] = addr;
+    syscalls[n] = fn;
     enable_write_protect();
 }
 
@@ -40,6 +40,6 @@ void unhook_syscall(int n) {
     enable_write_protect();
 }
 
-void *orig_syscall(int n) {
+syscall_t orig_syscall(int n) {
     return original_syscalls[n];
 }
