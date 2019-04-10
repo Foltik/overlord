@@ -12,5 +12,6 @@ void syscall_setup(void);
 void syscall_rollback(void);
 void hook_syscall(void *addr, int n);
 void unhook_syscall(int n);
+void *orig_syscall(int n);
 
 #endif

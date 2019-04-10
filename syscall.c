@@ -39,3 +39,7 @@ void unhook_syscall(int n) {
     syscalls[n] = original_syscalls[n];
     enable_write_protect();
 }
+
+void *orig_syscall(int n) {
+    return original_syscalls[n];
+}
