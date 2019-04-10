@@ -1,5 +1,5 @@
 obj-m += overlord.o
-overlord-objs := main.o idt.o
+overlord-objs := main.o idt.o msr.o
 
 all:
 	sudo make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
