@@ -1,10 +1,14 @@
 #ifndef OVERLORD_SYSCALL_H
 #define OVERLORD_SYSCALL_H
 
-void *load_syscall_table(void);
-void *load_syscall_ptr(u16 offset);
+// Helpers
+void **get_syscall_table(void);
 
-void hijack_syscall_table(void);
-void restore_syscall_table(void);
+// Hooking
+extern void **original_syscall_table;
+void syscall_setup(void);
+void syscall_rollback(void);
+void hook_syscall(void *addr, int n);
+void unhook_syscall(int n);
 
 #endif
