@@ -1,11 +1,13 @@
 #ifndef OVERLORD_SYSCALL_H
 #define OVERLORD_SYSCALL_H
 
-// Helpers
-void **get_syscall_table(void);
+#include <linux/types.h>
 
-// Hooking
-extern void **original_syscall_table;
+extern void **original_syscalls;
+extern void **syscalls;
+extern size_t syscalls_length;
+extern size_t syscalls_size;
+
 void syscall_setup(void);
 void syscall_rollback(void);
 void hook_syscall(void *addr, int n);
