@@ -28,7 +28,7 @@ extern struct idt_entry *original_idt;
 void idt_setup(void);
 void idt_rollback(void);
 void hook_idte(struct idt_entry entry, int n);
-void unhook_idte(int n);
 void hook_idte_stub(void *addr, int n);
+void unhook_idte(int n);
 
 #endif
